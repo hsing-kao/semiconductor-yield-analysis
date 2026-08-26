@@ -60,3 +60,26 @@ Raw variance depends on feature scale, and the physical units of the anonymous S
 
 **Limitation:**  
 The 98% threshold is an exploratory analysis choice, not a semiconductor process specification or universal statistical rule.
+## Decision 4 — Keep downloaded raw data outside version control
+
+**Decision:**  
+Do not commit the downloaded UCI SECOM raw data files or generated processed datasets to the Git repository.
+
+The following directories are excluded through `.gitignore`:
+
+- `data/raw/`
+- `data/processed/`
+
+**Reason:**  
+The SECOM dataset is an external data source rather than project-generated source code. Keeping downloaded raw data outside version control makes data provenance clearer and keeps the repository focused on reproducible code, documentation, and analysis decisions.
+
+The project README should provide instructions for obtaining the dataset from UCI and placing the required files under `data/raw/`.
+
+**Reproducibility implication:**  
+A user who clones the repository cannot run the analysis immediately without first obtaining the SECOM dataset. Reproducibility therefore depends on documenting the external data source and expected local file structure.
+
+**Alternative considered:**  
+Commit the raw SECOM files directly into the repository.
+
+**Why not:**  
+The project can remain reproducible by documenting the external data source and download procedure without duplicating externally maintained raw data in the Git repository.
