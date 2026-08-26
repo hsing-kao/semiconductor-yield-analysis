@@ -1,0 +1,21 @@
+# Python virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Temporary verification output
+milestone1_check.txt
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+# Raw and generated data
+data/raw/
+data/processed/
+# Exploratory learning script superseded by src/inspect_data.py
+load_data.py
