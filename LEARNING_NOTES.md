@@ -410,3 +410,156 @@ Fold-by-fold preprocessing verification produced:
 Fold 1 retained fewer features because feature filtering was fitted independently on that fold's training subset. The corresponding validation data was transformed using the same training-fitted feature selection.
 
 This fold-specific behavior is important evidence that preprocessing decisions are being learned inside the cross-validation workflow rather than globally before validation.
+
+好，DECISIONS.md 的 Decision 7 完成。下一步更新：
+Step 10 — LEARNING_NOTES.md
+這份文件和 DECISIONS.md 功能不同：
+- DECISIONS.md：為什麼我們做這些工程決策
+- LEARNING_NOTES.md：你之後複習、準備 technical interview 時，需要真正理解的概念
+目前 LEARNING_NOTES.md 已經到 Section 19 — Leakage-Safe Preprocessing Pipeline。LEARNING_NOTES.mdMD
+所以我們從 Section 20 接續。
+請在 LEARNING_NOTES.md 最下面加入以下內容。
+## 20. Dummy Classifier Baseline
+A baseline provides a simple reference point for determining whether a predictive model learns useful information beyond a trivial strategy.
+For the imbalanced SECOM classification problem, the baseline uses:
+DummyClassifier(strategy="most_frequent")
+This classifier always predicts the majority class, which is Pass (-1).
+Five-fold stratified cross-validation produced:
+- Accuracy: 0.9338
+- Balanced accuracy: 0.5000
+- Failure precision: 0.0000
+- Failure recall: 0.0000
+- Failure F1: 0.0000
+- Average precision: 0.0662
+- ROC-AUC: 0.5000
+The high accuracy is misleading because the classifier detects no failures.
+This provides a useful minimum reference for evaluating a real failure-detection model.
+## 21. Class-Weighted Logistic Regression
+The primary Milestone 3 model is Logistic Regression with:
+class_weight="balanced"
+Class weighting gives greater training importance to the minority failure class and lower relative importance to the majority Pass class.
+It does not:
+- create synthetic samples,
+- duplicate failure samples,
+- change the observed class distribution,
+- or perform oversampling.
+The Logistic Regression classifier is placed after the existing preprocessing workflow inside one scikit-learn Pipeline.
+Conceptually:
+raw data -> leakage-safe preprocessing -> Logistic Regression
+During each cross-validation round, both preprocessing and model fitting use only that round's training folds.
+This prevents validation observations from determining feature filtering, imputation statistics, scaling parameters, or fitted model coefficients.
+## 22. Balanced Accuracy
+Ordinary accuracy can be misleading when one class is much more common than the other.
+Balanced accuracy gives equal importance to classification performance on the two classes by averaging their recalls.
+For the always-Pass DummyClassifier:
+- Pass recall = 1
+- Failure recall = 0
+- Balanced accuracy = 0.5
+Therefore, the DummyClassifier can have approximately 93% ordinary accuracy while having only 0.5 balanced accuracy.
+The Logistic Regression cross-validation mean balanced accuracy was:
+0.5726
+The final holdout balanced accuracy was:
+0.5372
+This indicates some improvement beyond majority-class prediction, although the improvement is limited.
+## 23. ROC-AUC and Ranking Ability
+Logistic Regression can produce a score or probability representing how strongly each sample is associated with the failure class.
+ROC-AUC evaluates how well the model ranks actual Fail samples above actual Pass samples across possible classification thresholds.
+Conceptually:
+- ROC-AUC = 1.0 represents perfect ranking.
+- ROC-AUC = 0.5 represents no useful ranking ability beyond random ordering.
+The Logistic Regression results were:
+- Cross-validation mean ROC-AUC: 0.6027
+- Cross-validation standard deviation: 0.0799
+- Final holdout ROC-AUC: 0.6239
+These results indicate modest ranking ability beyond random ordering.
+ROC-AUC does not mean that 62.39% of all samples were classified correctly. It describes ranking/discrimination ability rather than ordinary classification accuracy.
+A model can rank a failure above many Pass samples while still classify that failure as Pass at a particular decision threshold.
+Therefore, ROC-AUC and failure recall can behave differently.
+## 24. Precision-Recall and Average Precision
+For a strongly imbalanced failure-detection problem, precision-recall behavior is especially useful because it focuses directly on performance for the positive failure class.
+Recall asks:
+Of the actual failures, how many were detected?
+
+Precision asks:
+Of the samples predicted as failures, how many were actually failures?
+
+Average precision summarizes precision-recall performance across model score thresholds.
+For the DummyClassifier:
+- Cross-validation mean average precision: 0.0662
+For Logistic Regression:
+- Cross-validation mean average precision: 0.1600
+- Cross-validation standard deviation: 0.0814
+- Final holdout average precision: 0.1192
+The final holdout failure prevalence was approximately:
+21 / 314 = 0.0669
+Therefore, the final average precision of 0.1192 was above the approximate failure prevalence baseline of 0.0669.
+This supports the conclusion that the model contains some predictive ranking information for failures, but the absolute performance remains limited.
+Average precision should not be interpreted as physical process understanding or causal evidence.
+## 25. Classification Threshold
+A classification model can first produce a continuous failure score or probability.
+A classification threshold converts that score into a final Pass/Fail prediction.
+For example, conceptually:
+failure probability >= threshold -> predict Fail
+failure probability < threshold -> predict Pass
+Changing the threshold creates a trade-off between missed failures and false alarms.
+A lower threshold can generally increase failure recall but may also increase false positives and reduce precision.
+The Milestone 3 final holdout test must not be used to choose a better threshold after observing its results.
+Any future threshold-selection analysis would need to make that decision using training/cross-validation data rather than repeatedly evaluating candidate thresholds on the final test set.
+## 26. Fold-to-Fold Stability
+Five-fold cross-validation should be examined across individual folds rather than using only the mean score.
+The Logistic Regression failure recall results were:
+- Fold 1: 0.1765
+- Fold 2: 0.3529
+- Fold 3: 0.2353
+- Fold 4: 0.0625
+- Fold 5: 0.4375
+- Mean: 0.2529
+- Standard deviation: 0.1315
+ROC-AUC ranged from:
+- 0.4618 in Fold 4
+- to 0.6958 in Fold 2
+Average precision also varied substantially across folds.
+Each validation fold contained only 16 or 17 failures, so a small change in the number of correctly detected failures can produce a substantial change in failure recall.
+The baseline should therefore not be described as highly stable.
+A defensible interpretation is that the model shows predictive signal but meaningful fold-to-fold variability.
+## 27. Final Holdout Evaluation
+After preprocessing choices, model choice, and evaluation procedures were fixed using the training/CV workflow, the complete modeling pipeline was fitted on all 1,253 training samples.
+It was then evaluated on the untouched 314-sample final holdout test set.
+The confusion matrix was:
+[[259  34]
+ [ 17   4]]
+with Fail (1) as the positive class.
+Therefore:
+- TN = 259
+- FP = 34
+- FN = 17
+- TP = 4
+Of the 21 actual failures:
+- 4 were detected.
+- 17 were missed.
+Final metrics were:
+- Accuracy: 0.8376
+- Balanced accuracy: 0.5372
+- Failure precision: 0.1053
+- Failure recall: 0.1905
+- Failure F1: 0.1356
+- Average precision: 0.1192
+- ROC-AUC: 0.6239
+The model predicted 38 samples as failures:
+34 false positives + 4 true positives = 38 predicted failures.
+Therefore, the failure precision was:
+4 / 38 = 0.1053
+The failure recall was:
+4 / 21 = 0.1905
+The model showed modest predictive value beyond the trivial majority-class baseline, but failure detection remained limited.
+It should be treated as an interpretable engineering baseline rather than a production-ready failure detector.
+## 28. Why the Final Test Set Must Now Remain Closed
+The final holdout test has now been used for its intended purpose: one final unseen evaluation of the fixed Milestone 3 modeling workflow.
+Its results must not now be used to choose:
+- a different classification threshold,
+- different class weights,
+- different preprocessing settings,
+- different hyperparameters,
+- or a different model.
+Doing so would convert the final test set into development feedback and weaken the validity of its role as unseen evaluation data.
+Future Milestone 4 candidate-signal analysis should preserve the leakage-safe evaluation principles established in Milestones 2 and 3.

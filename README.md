@@ -91,4 +91,73 @@ Pipeline verification on the holdout training set produced:
 
 Fold-by-fold verification confirmed that preprocessing was independently fitted within each cross-validation training fold. One fold retained 460 features while the other four retained 466, demonstrating that feature filtering can adapt to the observations available in each training fold while applying the same fitted feature set to its corresponding validation fold.
 
-No predictive model performance is reported yet. Modeling and failure-detection evaluation begin after completion of the preprocessing milestone.
+## Milestone 3 — Baseline & Evaluation
+
+Milestone 3 established an interpretable failure-detection baseline and evaluated it using the leakage-safe workflow developed in Milestone 2.
+
+A `DummyClassifier(strategy="most_frequent")` was first used as a trivial majority-class baseline. Because it always predicts Pass, it achieved high cross-validation accuracy while detecting no failures.
+
+A class-weighted Logistic Regression was then combined with the existing preprocessing workflow inside a single scikit-learn `Pipeline`:
+
+1. Remove features with more than 80% training-data missingness
+2. Remove features with no usable observed variation
+3. Apply median imputation
+4. Apply standard scaling
+5. Fit class-weighted Logistic Regression
+
+All preprocessing and model fitting were performed independently within each cross-validation training fold.
+
+### Cross-Validation Results
+
+Five-fold stratified cross-validation on the 1,253-sample training set produced:
+
+| Metric | DummyClassifier mean | Logistic Regression mean | Logistic Regression std |
+|---|---:|---:|---:|
+| Accuracy | 0.9338 | 0.8499 | 0.0170 |
+| Balanced accuracy | 0.5000 | 0.5726 | 0.0638 |
+| Failure precision | 0.0000 | 0.1403 | 0.0589 |
+| Failure recall | 0.0000 | 0.2529 | 0.1315 |
+| Failure F1 | 0.0000 | 0.1786 | 0.0796 |
+| Average precision | 0.0662 | 0.1600 | 0.0814 |
+| ROC-AUC | 0.5000 | 0.6027 | 0.0799 |
+
+The DummyClassifier illustrates why accuracy alone is misleading for this dataset: it achieved 93.38% mean accuracy while detecting no failures.
+
+The Logistic Regression baseline reduced overall accuracy but provided non-zero failure detection and improved balanced accuracy, failure recall, precision, F1, average precision, and ROC-AUC.
+
+Performance varied meaningfully across validation folds. For example, failure recall ranged from 0.0625 to 0.4375. Each validation fold contained only 16 or 17 failures, so this variability is an important limitation when interpreting baseline performance.
+
+### Final Holdout Evaluation
+
+After model-development decisions were complete, the full modeling pipeline was fitted on all 1,253 training samples and evaluated once on the untouched 314-sample holdout test set.
+
+The final confusion matrix was:
+
+    [[259  34]
+     [ 17   4]]
+
+with Fail (`1`) treated as the positive class.
+
+Final holdout results:
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 0.8376 |
+| Balanced accuracy | 0.5372 |
+| Failure precision | 0.1053 |
+| Failure recall | 0.1905 |
+| Failure F1 | 0.1356 |
+| Average precision | 0.1192 |
+| ROC-AUC | 0.6239 |
+
+The model detected 4 of the 21 failures in the final holdout set while producing 34 false-positive failure predictions.
+
+Overall, the class-weighted Logistic Regression showed modest predictive value beyond the trivial majority-class baseline, but failure detection remained limited. It should therefore be treated as an interpretable engineering baseline rather than a production-ready failure detector.
+
+The final holdout results are not used to tune the classification threshold, preprocessing choices, class weights, hyperparameters, or model selection.
+
+## Interpretation and Project Scope
+
+This project prioritizes reproducible manufacturing-data analysis, appropriate evaluation for class imbalance, and interpretable engineering conclusions rather than leaderboard-oriented model complexity.
+
+The SECOM measurement features are anonymized and observational. Predictive performance or feature importance does not establish physical causation. Later feature analysis will therefore describe important measurements as **candidate signals associated with failure outcomes**, not identified physical root causes.

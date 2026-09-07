@@ -21,3 +21,5 @@ data/processed/
 load_data.py
 # Milestone 2 exploratory learning script
 milestone2_learning.py
+# Milestone 3 exploratory learning script
+milestone3_learning.py
