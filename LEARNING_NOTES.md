@@ -217,3 +217,196 @@ Files such as `.venv/`, raw downloaded data, temporary verification output, and 
 The Milestone 1 checkpoint was committed on the `main` branch as:
 
 `Complete Milestone 1 dataset inspection`
+
+## 12. Train/Test Split and Unseen Evaluation
+
+A train/test split separates model development from final evaluation.
+
+- The training set is used for learning model parameters and developing preprocessing/modeling choices.
+- The test set is reserved for final evaluation on unseen data.
+- Repeatedly changing the analysis based on test-set performance would cause the test set to influence model development.
+
+For the SECOM dataset, a stratified 80/20 holdout split with `random_state=42` produced:
+
+- Training samples: 1,253
+  - Pass: 1,170
+  - Fail: 83
+  - Failure rate: approximately 6.62%
+- Test samples: 314
+  - Pass: 293
+  - Fail: 21
+  - Failure rate: approximately 6.69%
+
+Stratification preserves approximately the same Pass/Fail class proportions in the training and test sets. It does not balance the classes to 50/50.
+
+The test set is kept separate from preprocessing and cross-validation development.
+
+
+## 13. Stratified Cross-Validation
+
+Five-fold stratified cross-validation is used within the training set.
+
+In each cross-validation round:
+
+- Four folds are used for training.
+- One fold is used for validation.
+- Each fold serves as the validation fold once.
+- The held-out final test set does not participate in cross-validation.
+
+`StratifiedKFold` helps preserve the imbalanced Pass/Fail distribution across validation folds.
+
+Observed validation-fold failure counts were:
+
+- Fold 1: 17 failures
+- Fold 2: 17 failures
+- Fold 3: 17 failures
+- Fold 4: 16 failures
+- Fold 5: 16 failures
+
+These sum to the 83 failures in the holdout training set.
+
+Cross-validation performance should be interpreted across all folds rather than reporting only the best-performing fold.
+
+
+## 14. Data Leakage and Preprocessing Leakage
+
+Data leakage occurs when model development uses information that would not legitimately be available when predicting unseen data.
+
+Leakage can occur even without using test labels.
+
+For example, calculating an imputation value using both training and validation/test measurements allows information from unseen data to influence training preprocessing.
+
+The leakage-safe pattern is:
+
+`fit on training -> transform training/validation/test using training-fitted parameters`
+
+During cross-validation, preprocessing must be fitted separately inside each set of training folds.
+
+Examples of preprocessing quantities that must be learned only from training data include:
+
+- Missing-rate-based feature selection
+- Constant-feature selection
+- Imputation statistics
+- Scaling means and standard deviations
+
+The final test set must not be used to choose preprocessing methods or parameters.
+
+
+## 15. High-Missing Feature Policy
+
+Exploratory missingness analysis found:
+
+- 32 features with more than 20% missing values
+- 28 features with more than 50% missing values
+- 8 features with more than 80% missing values
+- 4 features with more than 90% missing values
+
+The extremely high-missing features formed groups at approximately 85.58% and 91.19% missingness.
+
+For the MVP, features with more than 80% missingness are removed during preprocessing.
+
+This is a conservative analysis policy intended to reduce dependence on extensively imputed features while retaining less-sparse anonymous features that may still contain predictive information.
+
+The 80% threshold is not a universal statistical rule or semiconductor process specification.
+
+The specific feature columns removed during modeling must be determined from the training data used to fit each preprocessing step rather than hard-coded from full-dataset inspection.
+
+
+## 16. Median Imputation
+
+Complete-case row deletion is not viable for the raw SECOM measurement matrix:
+
+- Complete rows across all 590 measurement features: 0
+
+Therefore, missing measurements require another handling strategy.
+
+After training-only high-missing and constant-feature filtering:
+
+- Original features: 590
+- High-missing features removed: 8
+- Constant features removed: 116
+- Remaining features: 466
+
+The retained training features showed substantial skewness:
+
+- Median feature skewness: approximately 2.04
+- 75th percentile of feature skewness: approximately 9.45
+- Observed range: approximately -21.90 to 35.38
+
+Median imputation was selected for the MVP because the median is less sensitive than the mean to skewed distributions and extreme values.
+
+Median imputation does not determine or correct the underlying missing-data mechanism.
+
+For leakage-safe use, the median must be learned from training data and then applied without refitting to validation or test data.
+
+
+## 17. Fit, Transform, and Fit-Transform
+
+In scikit-learn preprocessing:
+
+- `fit()` learns parameters from data.
+- `transform()` applies already learned parameters.
+- `fit_transform()` learns parameters and immediately transforms the same training data.
+
+For example, a median imputer fitted on training values `10`, `20`, and `NaN` learns a median of `15`.
+
+If validation values are `100`, `200`, and `NaN`, leakage-safe transformation still replaces the validation `NaN` with the training-derived value `15`, rather than recalculating a validation median of `150`.
+
+During cross-validation:
+
+- Training folds may use `fit_transform()`.
+- Validation folds should use `transform()` with preprocessing fitted on the corresponding training folds.
+
+
+## 18. Feature Scaling
+
+`StandardScaler` standardizes each retained feature using statistics learned from training data.
+
+Conceptually, standardization expresses a measurement relative to its training mean and standard deviation.
+
+Scaling is important for the planned regularized Logistic Regression baseline because feature scale affects optimization and regularization.
+
+Like imputation, scaling must be leakage-safe:
+
+- Fit the scaler on training data.
+- Apply the fitted scaler to validation/test data without refitting.
+
+Training-only exploratory verification after filtering and median imputation produced:
+
+- Shape after imputation: 1,253 x 466
+- Missing values after imputation: 0
+- Shape after scaling: 1,253 x 466
+- Average scaled feature mean: approximately 0
+- Average scaled feature standard deviation: 1.0
+
+
+## 19. Leakage-Safe Preprocessing Pipeline
+
+The formal preprocessing workflow contains four ordered steps:
+
+1. Remove features with training-data missing rate greater than 80%.
+2. Remove features with at most one observed non-missing unique value in the training data.
+3. Apply median imputation.
+4. Apply standard scaling.
+
+The feature filters are implemented as scikit-learn-compatible transformers so their feature-selection decisions are learned during `fit()` and reused during `transform()`.
+
+The formal preprocessing pipeline transformed the full holdout training set from:
+
+- Input: 1,253 x 590
+- Output: 1,253 x 466
+- Missing values after preprocessing: 0
+- Average scaled feature mean: approximately 0
+- Average scaled feature standard deviation: 1.0
+
+Fold-by-fold preprocessing verification produced:
+
+- Fold 1: training 1,002 x 460; validation 251 x 460
+- Fold 2: training 1,002 x 466; validation 251 x 466
+- Fold 3: training 1,002 x 466; validation 251 x 466
+- Fold 4: training 1,003 x 466; validation 250 x 466
+- Fold 5: training 1,003 x 466; validation 250 x 466
+
+Fold 1 retained fewer features because feature filtering was fitted independently on that fold's training subset. The corresponding validation data was transformed using the same training-fitted feature selection.
+
+This fold-specific behavior is important evidence that preprocessing decisions are being learned inside the cross-validation workflow rather than globally before validation.

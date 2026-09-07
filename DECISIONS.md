@@ -83,3 +83,51 @@ Commit the raw SECOM files directly into the repository.
 
 **Why not:**  
 The project can remain reproducible by documenting the external data source and download procedure without duplicating externally maintained raw data in the Git repository.
+
+## Decision 5 — Remove extremely high-missing features during preprocessing
+
+**Decision:**  
+During modeling preprocessing, remove features whose missing rate is greater than 80% in the data used to fit the preprocessing step.
+
+**Observed during exploratory analysis:**  
+8 of the 590 features have more than 80% missing values. In the full-dataset exploration, these features form two extreme-missingness groups at approximately 85.58% and 91.19% missingness.
+
+A training-only robustness check using the current stratified holdout split also identified 8 features above the 80% threshold, with the same feature indices as the full-dataset exploratory result.
+
+**Reason:**  
+Features with more than 80% missingness contain observed measurements for fewer than 20% of samples and would therefore depend heavily on imputation. For the MVP, the 80% threshold provides a conservative policy that reduces dependence on extensively imputed features while avoiding more aggressive removal of anonymous features that may still contain predictive information.
+
+**Important implementation constraint:**  
+The specific features to remove must be determined from the training data used to fit each preprocessing step. Feature indices identified from the full dataset must not be hard-coded into cross-validation preprocessing.
+
+**Limitation:**  
+The 80% threshold is an analysis policy for this MVP, not a universal statistical rule or semiconductor process specification. Features with very high missingness may still contain predictive information in their observed values, so removing them involves a potential information-loss trade-off.
+
+## Decision 6 — Use median imputation for retained measurement features
+
+**Decision:**  
+Use median imputation for missing values in measurement features that remain after high-missing and constant-feature filtering.
+
+**Observed during training-only analysis:**  
+Complete-case row deletion is not viable for the SECOM measurement matrix because zero samples contain complete observations across all 590 measurement features.
+
+After applying the current training-only exploratory filtering steps:
+
+- 8 features with more than 80% missing values were excluded.
+- 116 constant features were excluded.
+- 466 features remained.
+
+The retained training features showed substantial distributional skewness:
+
+- Median feature skewness: approximately 2.04
+- 75th percentile of feature skewness: approximately 9.45
+- Observed skewness range: approximately -21.90 to 35.38
+
+**Reason:**  
+Median imputation is less sensitive than mean imputation to skewed distributions and extreme values. Given the substantial skewness observed across the retained training features, median imputation provides a simple and robust approach for the MVP.
+
+**Important implementation constraint:**  
+Imputation values must be learned only from the data used to fit the preprocessing step. During cross-validation, the imputer must be fitted separately on each set of training folds and then applied to the corresponding validation fold without refitting.
+
+**Limitation:**  
+Median imputation does not establish or correct the underlying missing-data mechanism. The anonymized SECOM data does not provide enough information to determine whether missingness is MCAR, MAR, or MNAR. Median imputation is an MVP preprocessing choice, not a claim that it is universally optimal.

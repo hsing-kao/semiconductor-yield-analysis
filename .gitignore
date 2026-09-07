@@ -19,3 +19,5 @@ data/raw/
 data/processed/
 # Exploratory learning script superseded by src/inspect_data.py
 load_data.py
+# Milestone 2 exploratory learning script
+milestone2_learning.py
