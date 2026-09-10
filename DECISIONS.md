@@ -196,3 +196,69 @@ Important constraint:
 The final holdout results must not now be used to tune the classification threshold, preprocessing choices, class weights, hyperparameters, or model selection. Doing so would allow the final test set to influence model development.
 Limitation:
 Predictive performance does not establish physical causation. Any later analysis of influential anonymous SECOM features must describe them as candidate signals associated with failure outcomes rather than identified physical root causes.
+
+## Decision 8 — Use complementary training-derived methods for candidate-signal analysis
+Decision:
+Evaluate anonymous SECOM features using three complementary forms of evidence:
+1. Logistic Regression coefficient stability across five cross-validation training folds
+2. Training-only univariate Mann–Whitney U analysis with rank-biserial effect size and Benjamini–Hochberg false-discovery-rate correction
+3. Permutation importance evaluated on cross-validation validation folds using average precision as the scoring metric
+The final holdout test set is not used for candidate-signal selection.
+Reason:
+No single feature-ranking method provides a complete view of association or predictive relevance.
+Logistic Regression coefficients describe feature associations within the fitted multivariable model, but coefficients may be affected by relationships among correlated features.
+Univariate rank-based analysis examines each feature separately and provides an effect-size and statistical-association perspective without requiring a normal-distribution assumption for every anonymous measurement feature.
+Permutation importance provides a validation-based predictive perspective by measuring how much average precision changes when the relationship between a feature and validation samples is disrupted.
+Using complementary evidence reduces reliance on any single ranking method.
+Multiple-testing policy:
+The univariate analysis evaluates 466 retained training features.
+Observed results:
+- 466 univariate tests
+- 79 features with raw p < 0.05
+- 15 features with Benjamini–Hochberg FDR q < 0.05
+FDR correction is used because interpreting hundreds of unadjusted p-values would increase the risk of treating chance findings as meaningful associations.
+Important implementation constraint:
+Candidate-signal analysis is derived from the 1,253-sample training partition established in Milestone 2.
+Cross-validation coefficient estimates are fitted only on the corresponding CV training folds, and permutation importance is evaluated on the corresponding validation fold.
+The untouched final holdout test set is not reused for feature screening.
+Limitation:
+The three forms of evidence are complementary but not statistically independent. Logistic Regression coefficients and permutation importance both depend on the same underlying modeling framework.
+Statistical association and predictive importance do not establish physical causation.
+
+## Decision 9 — Retain five anonymous features as MVP candidate signals
+Decision:
+For the Milestone 4 MVP, retain an anonymous feature as a candidate signal when it satisfies all three of the following transparent screening criteria:
+1. The feature is retained in all five cross-validation training folds and its Logistic Regression coefficient has the same direction in all five folds.
+2. Its training-only univariate association has Benjamini–Hochberg FDR q < 0.05.
+3. Its validation-fold permutation importance for average precision is positive in at least four of five folds.
+These criteria produced five anonymous candidate signals:
+- Feature 59
+- Feature 129
+- Feature 21
+- Feature 477
+- Feature 341
+Observed evidence:
+Feature	Mean CV coefficient	Coefficient direction	Rank-biserial	FDR q	Mean permutation importance	Positive permutation folds
+59	1.6681	Fail, 5/5	0.3193	0.000265	0.007156	4/5
+129	1.0279	Fail, 5/5	0.2457	0.009281	0.005921	4/5
+21	0.7402	Fail, 5/5	0.2144	0.033701	0.007468	4/5
+477	0.4702	Fail, 5/5	0.2777	0.002144	0.001851	4/5
+341	0.4017	Fail, 5/5	0.2432	0.009816	0.001759	4/5
+
+
+All five candidates showed agreement between the Logistic Regression coefficient direction and the univariate rank-biserial direction.
+Training missingness was below 1% for all five features, and all 83 training failures had observed measurements for each candidate.
+Interpretation:
+These five features are retained as candidate signals associated with failure outcomes because they received support from multiple complementary analysis criteria.
+Feature 59 was particularly prominent in the current analysis, with the largest mean absolute cross-validation coefficient among the selected candidates and a positive univariate association after FDR correction.
+The five candidates should not be interpreted as a definitive ordered ranking of physical importance because coefficient magnitude, rank-biserial effect size, and permutation importance measure different quantities on different scales.
+Screening-policy limitation:
+The criteria above are transparent MVP analysis policies, not universal statistical thresholds or semiconductor process specifications.
+In particular, requiring positive permutation importance in at least four of five folds is a reproducible screening rule chosen for this project; it does not prove that a feature is physically important.
+Causality limitation:
+The SECOM features are anonymized and the dataset is observational.
+The selected features must therefore be described as:
+candidate signals associated with failure outcomes
+and not as:
+identified root causes
+No physical identity such as chamber condition, pressure, temperature, recipe parameter, or sensor measurement should be assigned to these anonymous feature indices without supporting documentation.

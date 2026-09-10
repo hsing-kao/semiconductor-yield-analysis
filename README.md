@@ -156,8 +156,65 @@ Overall, the class-weighted Logistic Regression showed modest predictive value b
 
 The final holdout results are not used to tune the classification threshold, preprocessing choices, class weights, hyperparameters, or model selection.
 
+## Milestone 4 — Candidate-Signal Analysis
+
+Milestone 4 extended the interpretable Logistic Regression baseline to identify anonymous measurement features that showed consistent associations with failure outcomes.
+
+Candidate-signal analysis was performed using the 1,253-sample training partition only. The final holdout test set was not reused for feature screening.
+
+Three complementary forms of evidence were evaluated:
+
+1. Logistic Regression coefficient direction and magnitude across five cross-validation training folds
+2. Training-only Mann–Whitney U analysis with rank-biserial effect size and Benjamini–Hochberg false-discovery-rate correction
+3. Validation-fold permutation importance using average precision as the scoring metric
+
+### Multiple-Testing Control
+
+Univariate analysis was performed on 466 retained training features.
+
+- 79 features had raw `p < 0.05`
+- 15 features remained significant after Benjamini–Hochberg correction with FDR `q < 0.05`
+
+This demonstrates why unadjusted p-values alone were not used for high-dimensional candidate screening.
+
+### Candidate-Signal Screening
+
+For the MVP, a feature was retained as a candidate signal when it satisfied all three transparent screening criteria:
+
+1. Retained in all five cross-validation training folds with the same Logistic Regression coefficient direction in all five folds
+2. Training-only univariate association with FDR `q < 0.05`
+3. Positive validation-fold permutation importance for average precision in at least four of five folds
+
+Five anonymous features satisfied all three criteria:
+
+| Feature | Mean CV coefficient | Rank-biserial | FDR q | Mean permutation importance | Positive permutation folds |
+|---:|---:|---:|---:|---:|---:|
+| 59 | 1.6681 | 0.3193 | 0.000265 | 0.007156 | 4/5 |
+| 129 | 1.0279 | 0.2457 | 0.009281 | 0.005921 | 4/5 |
+| 21 | 0.7402 | 0.2144 | 0.033701 | 0.007468 | 4/5 |
+| 477 | 0.4702 | 0.2777 | 0.002144 | 0.001851 | 4/5 |
+| 341 | 0.4017 | 0.2432 | 0.009816 | 0.001759 | 4/5 |
+
+All five candidates had positive Logistic Regression coefficients in all five folds and positive univariate rank-biserial associations.
+
+Training missingness was below 1% for all five candidate features, and all 83 training failures had observed measurements for each candidate.
+
+The generated candidate table is saved to:
+
+`reports/candidate_signals.csv`
+
+This artifact provides a reproducible input for later process/time-oriented visualization.
+
+### Interpretation
+
+The five selected features are described as **candidate signals associated with failure outcomes**.
+
+They are not treated as identified physical root causes.
+
+The screening criteria are transparent MVP analysis policies rather than universal statistical thresholds or semiconductor process specifications. Coefficient magnitude, rank-biserial effect size, and permutation importance also measure different quantities, so the five candidates should not be interpreted as a definitive ordered ranking of physical importance.
+
 ## Interpretation and Project Scope
 
 This project prioritizes reproducible manufacturing-data analysis, appropriate evaluation for class imbalance, and interpretable engineering conclusions rather than leaderboard-oriented model complexity.
 
-The SECOM measurement features are anonymized and observational. Predictive performance or feature importance does not establish physical causation. Later feature analysis will therefore describe important measurements as **candidate signals associated with failure outcomes**, not identified physical root causes.
+The SECOM measurement features are anonymized and observational. Predictive performance, statistical association, and feature importance do not establish physical causation. Selected measurements are therefore described as **candidate signals associated with failure outcomes**, not identified physical root causes.

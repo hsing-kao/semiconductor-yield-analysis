@@ -563,3 +563,145 @@ Its results must not now be used to choose:
 - or a different model.
 Doing so would convert the final test set into development feedback and weaken the validity of its role as unseen evaluation data.
 Future Milestone 4 candidate-signal analysis should preserve the leakage-safe evaluation principles established in Milestones 2 and 3.
+
+## 29. Logistic Regression Coefficients for Candidate-Signal Analysis
+After Milestone 3 established Logistic Regression as the interpretable baseline, Milestone 4 uses its coefficients as one source of feature-association evidence.
+Because the retained features are standardized before Logistic Regression, coefficient magnitudes are more comparable than they would be on the original heterogeneous measurement scales.
+With Fail (1) as the positive class:
+- A positive coefficient means that a higher standardized feature value is associated with the model's Fail direction, conditional on the other features in the fitted model.
+- A negative coefficient means that a higher standardized feature value is associated with the model's Pass direction, conditional on the other features.
+- A larger absolute coefficient indicates a stronger contribution within that fitted Logistic Regression model.
+A coefficient does not establish physical causation.
+It also should not be interpreted in isolation because correlated features can influence how Logistic Regression distributes coefficients among measurements.
+The full holdout-training preprocessing retained 466 features and produced 466 Logistic Regression coefficients.
+The feature indices had to be recovered from the fitted preprocessing filters because preprocessing removes some original columns. The coefficient position alone is not the original SECOM feature index.
+For example, the first retained feature indices were:
+0, 1, 2, 3, 4, 6, 7, 8, 9, 10
+so transformed-column position and original anonymous feature index are not interchangeable.
+
+## 30. Cross-Validation Coefficient Stability
+A large coefficient from one fit may not represent a stable association.
+Milestone 4 therefore refitted the complete preprocessing and Logistic Regression workflow independently in each of the five cross-validation training folds.
+The retained feature counts were:
+- Fold 1: 460
+- Fold 2: 466
+- Fold 3: 466
+- Fold 4: 466
+- Fold 5: 466
+This reproduced the fold-specific preprocessing behavior observed in Milestone 2.
+For each feature, coefficient stability was examined using:
+- number of folds in which the feature was retained,
+- coefficient direction,
+- mean coefficient,
+- mean absolute coefficient,
+- minimum and maximum coefficient across folds.
+Among the 460 features present in all five folds, 210 had the same coefficient direction in all five folds.
+Therefore:
+5/5 direction consistency alone is not a sufficiently selective definition of a strong candidate signal.
+
+Feature 59 was particularly prominent in the coefficient analysis:
+- Present in 5/5 folds
+- Positive coefficient in 5/5 folds
+- Mean coefficient: approximately 1.6681
+- Minimum coefficient: approximately 1.0482
+- Maximum coefficient: approximately 2.1715
+This makes Feature 59 a strong coefficient-based candidate, but coefficient evidence alone is not sufficient for final candidate screening.
+
+## 31. Mann–Whitney U and Rank-Biserial Effect Size
+Milestone 4 uses a training-only univariate analysis as a complementary perspective to the multivariable Logistic Regression model.
+The Mann–Whitney U test compares the relative ranks of observed feature values between the Fail and Pass groups.
+It was selected because the retained SECOM features showed substantial skewness and there is no basis for assuming that every anonymous measurement feature follows a normal distribution.
+The analysis uses observed values rather than median-imputed values so that large groups of artificially identical imputed values do not determine the rank comparison.
+The Mann–Whitney U test should not automatically be interpreted as a test of medians alone. It provides evidence about differences in the relative distributions/ranks between groups.
+Rank-biserial correlation is used as an effect-size measure.
+In this project:
+- Positive rank-biserial values indicate that Fail samples tend to have higher observed values than Pass samples.
+- Negative values indicate that Fail samples tend to have lower observed values than Pass samples.
+- The absolute value describes the strength of the rank-based separation.
+A p-value and an effect size answer different questions.
+A small p-value does not automatically mean that an association is large or engineering-significant.
+For example, Feature 103 had the largest observed absolute rank-biserial effect among the initial univariate results:
+- Rank-biserial: approximately 0.3628
+- Raw p-value: approximately 3.21e-08
+However, Feature 103 was not among the strongest coefficient-stability candidates.
+This demonstrates why Milestone 4 does not rely on a single feature-ranking method.
+
+## 32. Multiple Testing and False Discovery Rate
+Testing hundreds of features creates a multiple-testing problem.
+Milestone 4 performed 466 univariate feature tests.
+Using unadjusted p-values:
+- 79 features had raw p < 0.05.
+However, when many tests are performed, some small p-values can occur by chance.
+The Benjamini–Hochberg false-discovery-rate procedure was therefore applied.
+After correction:
+- 15 features had FDR-adjusted q < 0.05.
+This reduction from 79 raw-significant results to 15 FDR-significant results demonstrates why unadjusted p-values should not be used alone for high-dimensional feature screening.
+The FDR procedure controls the expected proportion of false discoveries among the set of declared discoveries under its assumptions.
+An FDR-significant association still does not establish physical causation.
+
+## 33. Permutation Importance
+Permutation importance provides a validation-based predictive perspective.
+For each cross-validation round:
+1. The complete preprocessing and Logistic Regression pipeline is fitted on the CV training folds.
+2. Baseline performance is evaluated on the corresponding validation fold.
+3. One raw input feature is randomly shuffled across validation samples.
+4. Validation performance is evaluated again.
+5. The performance change measures how much the fitted model depended on the original feature-to-sample relationship.
+Milestone 4 uses average precision as the permutation-importance scoring metric because failure is the minority class and average precision focuses on precision-recall performance.
+A positive permutation importance means that disrupting the feature tended to reduce validation average precision.
+A value near zero means that shuffling the feature had little average effect on validation performance.
+Negative importance can occur when shuffling happens to improve validation performance.
+Permutation importance was repeated 10 times per feature within each validation fold.
+The analysis showed meaningful fold-to-fold variability.
+For example:
+- Feature 75 had the largest mean permutation importance among the displayed results, approximately 0.0208, but was positive in only 3/5 folds.
+- Feature 14 and Feature 64 had positive permutation importance in 5/5 folds.
+- Feature 59 had mean permutation importance approximately 0.00716 and positive importance in 4/5 folds.
+Therefore, permutation-importance magnitude and cross-fold consistency should both be considered.
+Permutation importance does not establish physical causation and can also be affected by correlated or redundant features.
+
+## 34. Cross-Method Candidate-Signal Screening
+Milestone 4 combines complementary evidence rather than manually selecting features that look interesting.
+The MVP candidate-signal rule requires all three criteria:
+1. The feature is retained in all five CV training folds and its Logistic Regression coefficient has the same direction in all five folds.
+2. The training-only univariate association has Benjamini–Hochberg FDR q < 0.05.
+3. Validation-fold permutation importance for average precision is positive in at least 4/5 folds.
+The criteria are explicit and reproducible, but they are analysis policies for this project rather than universal statistical thresholds.
+Five anonymous features satisfied all three criteria:
+- Feature 59
+- Feature 129
+- Feature 21
+- Feature 477
+- Feature 341
+All five had:
+- positive Logistic Regression coefficients in 5/5 folds,
+- positive rank-biserial associations,
+- agreement between coefficient and univariate direction,
+- FDR q < 0.05,
+- positive permutation importance in 4/5 folds.
+The selected features are therefore described as:
+candidate signals associated with failure outcomes
+They are not described as identified root causes.
+The five candidates are also not treated as a definitive ordered ranking of physical importance because coefficient magnitude, rank-biserial effect size, and permutation importance measure different quantities on different scales.
+
+## 35. Candidate Robustness and Missingness
+Candidate-signal evidence should also be interpreted in the context of measurement availability.
+The five selected features had low training missingness:
+- Feature 59: approximately 0.40%
+- Feature 129: approximately 0.72%
+- Feature 21: approximately 0.08%
+- Feature 477: approximately 0.32%
+- Feature 341: approximately 0.32%
+All 83 training failures had observed values for all five candidate features.
+Therefore, the candidate results are not based on a small subset of observed failure measurements.
+Observed training-group medians were:
+Feature	Pass median	Fail median
+59	0.8018	4.9745
+129	-0.1419	0.0000
+21	-5526.50	-5426.25
+477	5.19305	6.4994
+341	2.37485	2.7761
+
+
+For all five candidates, the Fail-group median was higher than the Pass-group median, consistent with their positive rank-biserial direction.
+These values describe associations in the SECOM training data. They do not establish that increasing a feature physically causes failure.
