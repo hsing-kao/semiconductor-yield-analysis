@@ -262,3 +262,88 @@ candidate signals associated with failure outcomes
 and not as:
 identified root causes
 No physical identity such as chamber condition, pressure, temperature, recipe parameter, or sensor measurement should be assigned to these anonymous feature indices without supporting documentation.
+
+## Decision 10 — Use descriptive time-oriented monitoring rather than formal SPC for Milestone 5
+
+**Decision:**
+
+Use descriptive time-oriented visualization and chronological-block summaries for the Milestone 5 MVP rather than introducing formal statistical process control (SPC) charts.
+
+The five frozen Milestone 4 candidate signals remain unchanged:
+
+- Feature 59
+- Feature 129
+- Feature 21
+- Feature 477
+- Feature 341
+
+Milestone 5 uses the full observed chronological dataset for post-selection descriptive visualization. The final holdout is not reused for model tuning, threshold selection, preprocessing selection, model selection, or candidate-feature selection.
+
+**Observed timestamp structure:**
+
+Consecutive observation gaps were irregularly spaced.
+
+Across the 1,566 consecutive timestamp gaps:
+
+- Median gap: 37 minutes
+- Mean gap: approximately 82.5 minutes
+- Zero-length gaps: 33
+- Maximum observed gap: 2 days and 38 minutes
+
+Duplicate timestamps therefore remain present, and timestamp is not a unique sample identifier.
+
+**Reason:**
+
+Formal SPC interpretation would require stronger knowledge of the sampling structure and manufacturing context than the anonymized SECOM dataset provides.
+
+The available data does not identify:
+
+- process subgroup definitions,
+- tool or chamber identity,
+- recipe or product context,
+- sampling policy,
+- engineering specification limits,
+- or known stable baseline operating periods.
+
+The irregular observation spacing and duplicate timestamps also make it inappropriate to assume a uniformly sampled continuous process without additional justification.
+
+Instead, Milestone 5 uses raw observed candidate measurements over timestamp and four approximately equal-count chronological observation blocks as a reproducible descriptive summary.
+
+The chronological blocks are used only to compare measurement location and dispersion over the observed timeline. Their boundaries are not interpreted as detected change points, process regimes, excursion boundaries, or intervention times.
+
+**Observed temporal behavior:**
+
+The five frozen candidate signals showed temporal distribution variation, but their patterns were not identical.
+
+Examples include:
+
+- Feature 59 had a substantially higher median and larger IQR in the earliest chronological block than in the later three blocks.
+- Feature 129 showed a distinct lower-valued and more dispersed distribution in Block 3.
+- Feature 21 had substantially larger IQRs in Blocks 1–2 than in Blocks 3–4.
+- Features 477 and 341 showed more moderate temporal differences in measurement level and dispersion.
+
+A supporting outcome-stratified exploratory check showed that temporal differences remained visible within Pass observations for multiple candidates. Therefore, changing Pass/Fail composition alone does not explain all of the observed temporal variation.
+
+Descriptive within-block Pass/Fail median differences also varied across time blocks, so the candidate signals should not be interpreted as temporally invariant standalone failure indicators.
+
+**Visualization policy:**
+
+Formal distribution and timeline figures use the combined observed 1st–99th percentile range for each candidate as a display-only zoom to improve readability.
+
+Measurements outside this display range are not removed from the dataset and remain part of the numerical analysis.
+
+**Limitation:**
+
+The chronological-block analysis is descriptive rather than a formal change-point or process-control analysis.
+
+Temporal variation in anonymous SECOM measurements does not establish:
+
+- physical process drift,
+- loss of statistical control,
+- a manufacturing excursion,
+- equipment change,
+- recipe change,
+- maintenance activity,
+- or physical root cause.
+
+The selected measurements remain described as candidate signals associated with failure outcomes.

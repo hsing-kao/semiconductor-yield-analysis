@@ -213,6 +213,127 @@ They are not treated as identified physical root causes.
 
 The screening criteria are transparent MVP analysis policies rather than universal statistical thresholds or semiconductor process specifications. Coefficient magnitude, rank-biserial effect size, and permutation importance also measure different quantities, so the five candidates should not be interpreted as a definitive ordered ranking of physical importance.
 
+## Milestone 5 — Process Monitoring and Time-Oriented Visualization
+
+Milestone 5 extended the frozen Milestone 4 candidate-signal analysis into a descriptive process/time-oriented view of the SECOM observations.
+
+The candidate set was not reselected after inspecting the time-oriented visualizations. The analysis uses the five frozen Milestone 4 candidates from:
+
+`reports/candidate_signals.csv`
+
+The five candidates remain:
+
+- Feature 59
+- Feature 129
+- Feature 21
+- Feature 477
+- Feature 341
+
+### Timestamp Structure
+
+Before interpreting candidate measurements over time, the observation timing structure was examined.
+
+Across the 1,566 consecutive timestamp gaps:
+
+- Median gap: 37 minutes
+- Mean gap: approximately 82.5 minutes
+- Zero-length gaps: 33
+- Maximum observed gap: 2 days and 38 minutes
+
+The SECOM observations are therefore chronologically ordered but irregularly spaced in time.
+
+Duplicate timestamps are present, so timestamp is not treated as a unique sample identifier.
+
+Because the sampling intervals are irregular, the formal candidate timelines use scatter-based visualization rather than connecting observations as a continuous measured trajectory.
+
+### Candidate-Signal Distributions
+
+The five frozen candidate signals were compared between Pass and Fail observations using their raw observed measurements.
+
+The formal distribution figure is saved to:
+
+`figures/candidate_distributions.png`
+
+![Frozen candidate-signal distributions by outcome](figures/candidate_distributions.png)
+
+The five candidates generally showed higher raw measurements among Fail observations, consistent with the positive association directions established during Milestone 4.
+
+However, substantial Pass/Fail overlap remained. The candidate signals should therefore not be interpreted as deterministic standalone failure indicators.
+
+For readability, the formal figure displays the combined observed 1st–99th percentile range for each candidate. Measurements outside this display range remain in the dataset and all numerical analyses.
+
+### Candidate Measurements Over Time
+
+The raw observed candidate measurements were also visualized over the complete timestamp sequence.
+
+The formal timeline figure is saved to:
+
+`figures/candidate_timelines.png`
+
+![Frozen candidate-signal measurements over time](figures/candidate_timelines.png)
+
+The candidate measurements showed temporal distribution variation, but the patterns were not identical across features.
+
+Examples from the formal chronological-block summary include:
+
+- Feature 59 had a median of approximately 9.62 and an IQR of approximately 19.17 in Block 1, compared with medians near -0.55 to 1.03 and IQRs near 4–5 in Blocks 2–4.
+- Feature 129 showed a distinct lower-valued and more dispersed distribution in Block 3, with a median of approximately -2.22 and an IQR of approximately 2.60.
+- Feature 21 had IQRs of approximately 900 in Blocks 1–2, compared with approximately 286–323 in Blocks 3–4.
+- Features 477 and 341 showed more moderate temporal differences in measurement level and dispersion.
+
+The reproducible numerical summary is saved to:
+
+`reports/candidate_temporal_summary.csv`
+
+### Chronological-Block Analysis
+
+For descriptive temporal comparison, the complete chronological observation sequence was divided into four approximately equal-count blocks.
+
+The block boundaries are a reproducible summary device based on observation order.
+
+They are not interpreted as:
+
+- detected process change points,
+- known process regimes,
+- excursion boundaries,
+- equipment interventions,
+- or recipe changes.
+
+A supporting outcome-stratified exploratory check showed that temporal differences remained visible within Pass observations for multiple candidate signals.
+
+This indicates that changing Pass/Fail composition alone does not explain all of the observed temporal variation.
+
+Descriptive within-block Pass/Fail median differences also varied across time blocks. Therefore, the Milestone 4 candidate signals should not be interpreted as temporally invariant standalone failure indicators.
+
+### SPC Decision
+
+Formal statistical process control charts were not introduced for the Milestone 5 MVP.
+
+The anonymized SECOM data does not provide sufficient manufacturing context to define and defend process subgroups, tool or chamber identity, recipe or product context, sampling policy, specification limits, or a known stable baseline period.
+
+The observations are also irregularly spaced and include duplicate timestamps.
+
+For these reasons, Milestone 5 uses descriptive time-oriented visualization and chronological summaries rather than presenting control limits whose process interpretation cannot be adequately justified.
+
+This decision does not establish that the underlying process was stable or unstable. It reflects the limitations of the available anonymized observational data.
+
+### Milestone 5 Outputs
+
+Formal source:
+
+`src/process_monitoring.py`
+
+Generated figures:
+
+- `figures/candidate_distributions.png`
+- `figures/candidate_timelines.png`
+
+Generated report:
+
+- `reports/candidate_temporal_summary.csv`
+
+Milestone 5 therefore adds a process/time-oriented perspective to the training-derived candidate signals while preserving the distinction between statistical association, temporal variation, and physical causation.
+
 ## Interpretation and Project Scope
 
 This project prioritizes reproducible manufacturing-data analysis, appropriate evaluation for class imbalance, and interpretable engineering conclusions rather than leaderboard-oriented model complexity.

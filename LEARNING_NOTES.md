@@ -705,3 +705,191 @@ Feature	Pass median	Fail median
 
 For all five candidates, the Fail-group median was higher than the Pass-group median, consistent with their positive rank-biserial direction.
 These values describe associations in the SECOM training data. They do not establish that increasing a feature physically causes failure.
+
+## 36. Irregular Time Sampling
+
+Chronological ordering does not mean that observations are equally spaced in time.
+
+Milestone 5 examined the consecutive timestamp gaps across the SECOM dataset.
+
+Observed results:
+
+- Consecutive timestamp gaps: 1,566
+- Median gap: 37 minutes
+- Mean gap: approximately 82.5 minutes
+- Minimum gap: 0 minutes
+- Zero-length gaps: 33
+- Maximum gap: 2 days and 38 minutes
+
+The observation intervals therefore vary substantially.
+
+The 33 zero-length gaps are consistent with the duplicate timestamps identified during Milestone 1. Timestamp should therefore not be treated as a unique sample identifier.
+
+Irregular sampling affects visualization and interpretation.
+
+For example, connecting consecutive observations with a continuous line can visually imply knowledge of the measurement trajectory between observations even when no measurements were recorded during that interval.
+
+Milestone 5 therefore uses scatter-based timestamp visualization for the raw candidate measurements.
+
+Irregular time spacing does not by itself prove process instability, drift, or an excursion. It describes the structure of the available observations.
+
+
+## 37. Temporal Distribution Variation
+
+A measurement distribution can change over the observed timeline.
+
+This can involve changes in:
+
+- location, such as the median,
+- dispersion, such as the interquartile range (IQR),
+- or both.
+
+Milestone 5 divided the complete chronological observation sequence into four approximately equal-count blocks as a reproducible descriptive summary.
+
+These blocks are based on observation order rather than manually selected visual boundaries.
+
+For Feature 59, the formal chronological-block summary showed:
+
+- Block 1 median: approximately 9.62
+- Block 1 IQR: approximately 19.17
+- Block 2 median: approximately 1.03
+- Block 2 IQR: approximately 4.05
+- Block 3 median: approximately -0.25
+- Block 3 IQR: approximately 4.69
+- Block 4 median: approximately -0.55
+- Block 4 IQR: approximately 4.75
+
+Feature 59 therefore had substantially higher measurements and greater dispersion in the earliest chronological block than in the later three blocks.
+
+The other frozen candidate signals also showed temporal variation, but the patterns were not identical.
+
+For example:
+
+- Feature 129 showed a distinct lower-valued and more dispersed distribution in Block 3.
+- Feature 21 showed substantially larger IQRs in Blocks 1–2 than in Blocks 3–4.
+- Features 477 and 341 showed more moderate temporal differences in measurement level and dispersion.
+
+Because the patterns differ across features, the analysis does not support describing all five candidates as undergoing one common process shift.
+
+Temporal distribution variation in an anonymous measurement does not identify the physical reason for the change.
+
+
+## 38. Separating Time Effects from Outcome Composition
+
+A temporal difference in a candidate signal could partly reflect changes in the proportion of Pass and Fail observations over time.
+
+This matters because the five Milestone 4 candidates were already selected for positive association with failure outcomes.
+
+Conceptually:
+
+more Fail observations in a time period
+-> candidate values may appear higher
+-> even if the measurement distribution within Pass observations did not change
+
+Milestone 5 therefore performed a supporting exploratory check by examining chronological-block summaries separately within Pass and Fail observations.
+
+Temporal differences remained visible within Pass observations for multiple candidates.
+
+For example, Feature 59 Pass-only measurements showed:
+
+- Block 1 median: approximately 8.94
+- Block 2 median: approximately 0.97
+- Block 3 median: approximately -0.44
+- Block 4 median: approximately -0.55
+
+Its Pass-only IQR also decreased substantially after Block 1.
+
+Therefore, changing Pass/Fail composition alone does not explain all of the observed Feature 59 temporal variation.
+
+This does not identify the physical cause of the temporal change. It only shows that the pattern is not solely a consequence of different Pass/Fail proportions.
+
+
+## 39. Association Can Vary Across Time
+
+An overall association does not guarantee that the same descriptive separation appears in every chronological period.
+
+For Feature 59, the within-block Fail median minus Pass median was:
+
+- Block 1: approximately +5.13
+- Block 2: approximately +4.31
+- Block 3: approximately +3.67
+- Block 4: approximately -0.18
+
+The first three blocks showed higher Fail-group medians, while the final block did not show the same median separation.
+
+Other candidates also showed different degrees of within-block stability.
+
+This means that the Milestone 4 candidate signals should not automatically be interpreted as temporally invariant standalone failure indicators.
+
+The chronological-block comparison is descriptive. It does not establish a statistically significant feature-by-time interaction.
+
+Small Fail subgroup sizes are also an important limitation:
+
+- Block 1: 53 Fail observations
+- Block 2: 14
+- Block 3: 13
+- Block 4: 24
+
+Therefore, within-block Fail medians and IQRs, especially in Blocks 2 and 3, should be interpreted cautiously.
+
+
+## 40. Chronological Blocks Are Not Change Points
+
+Milestone 5 uses four approximately equal-count chronological observation blocks.
+
+The purpose is to create a simple and reproducible way to summarize measurement distributions over the observed timeline.
+
+The block boundaries are not:
+
+- detected process change points,
+- known manufacturing interventions,
+- process-state boundaries,
+- excursion start or end times,
+- or physical operating regimes.
+
+For example, a boundary generated by dividing observations into equal-count blocks should not be interpreted as evidence that the manufacturing process physically changed at that timestamp.
+
+A formal change-point analysis would answer a different question and would require additional assumptions and interpretation.
+
+
+## 41. Why Formal SPC Was Not Used
+
+Statistical process control should not be added simply because the dataset comes from semiconductor manufacturing.
+
+A defensible control chart requires enough process and sampling context to define what the chart represents and how its control limits should be interpreted.
+
+The anonymized SECOM dataset does not provide important context such as:
+
+- process subgroup definitions,
+- tool or chamber identity,
+- recipe or product context,
+- sampling policy,
+- engineering specification limits,
+- or a known stable baseline operating period.
+
+The timestamps are also irregularly spaced and contain duplicates.
+
+Milestone 5 therefore uses descriptive time-oriented visualization rather than presenting formal SPC control limits that cannot be adequately justified from the available information.
+
+Not using SPC is not evidence that the process was stable or unstable.
+
+It means that the available dataset does not provide enough context for a defensible SPC interpretation in this MVP.
+
+
+## 42. Display Zoom Versus Data Removal
+
+The formal Milestone 5 figures use the combined observed 1st–99th percentile range for each candidate signal as a display-only zoom.
+
+This improves readability because a small number of extreme observations can otherwise compress the central distribution into a narrow region of the figure.
+
+The zoom does not:
+
+- delete observations,
+- modify the raw dataset,
+- change candidate selection,
+- change numerical summaries,
+- or redefine an outlier-removal policy.
+
+Measurements outside the displayed range remain part of the dataset and numerical analysis.
+
+The same percentile rule is applied consistently rather than manually choosing a different visual range to make a particular candidate look more strongly associated with failure.
