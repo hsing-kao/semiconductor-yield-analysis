@@ -1,4 +1,16 @@
-# Semiconductor Manufacturing Yield & Process Excursion Analysis
+# Semiconductor Manufacturing Yield & Process Analysis
+
+## Overview
+
+This project develops an end-to-end semiconductor yield-analysis workflow using the UCI SECOM manufacturing dataset, combining data-quality screening, leakage-safe preprocessing, interpretable failure modeling, statistically supported candidate-signal identification, and time-oriented process analysis.
+
+### Key Results
+
+- Built a reproducible, leakage-safe workflow for highly imbalanced semiconductor manufacturing pass/fail data.
+- Established an interpretable failure-detection baseline while showing why ordinary accuracy is misleading for rare failures.
+- Identified 5 candidate signals supported by complementary model, statistical, and validation evidence.
+- Found temporal variation in candidate-signal distributions and failure associations across the observed production timeline.
+- Preserved engineering interpretation boundaries by treating the anonymous measurements as failure-associated signals rather than physical root causes.
 
 ## Project Objective
 
